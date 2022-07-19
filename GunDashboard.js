@@ -1,12 +1,12 @@
 var overview={
-    display: async function () {
-        var svg = d3.select("#Overview").append("svg").attr("Width",600).attr("height",300),
-        width = +svg.attr("width"),
-        height = +svg.attr("height");    
+    display: async function () {      
+      d3.select("#Overview").selectAll("text").remove();
+      d3.select("#Overview").selectAll("svg").remove();
 
-    usMap = await(d3.json("https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json"))	
-    // Load external data and boot
-    stateData = await(d3.csv("https://raw.githubusercontent.com/sudiptobilu/Dashboard/main/GunViolence.csv"))
+    var margin = {top: 50, right: 100, bottom: 70, left: 260},
+    width = 1300 - margin.left - margin.right,
+    height = 450 - margin.top - margin.bottom;
+       stateData = await(d3.csv("https://raw.githubusercontent.com/sudiptobilu/Dashboard/main/GunViolence.csv"))
 
 var statelist = [];
 var temp = {};
@@ -21,7 +21,7 @@ if(y !== undefined)
 	{
 		y["killed"] = y["killed"] + parseInt(stateData[i].n_killed);
 		y["injured"] = y["injured"] + parseInt(stateData[i].n_injured);
-		y["incidents"] = y["incidents"] + parseInt(stateData[i].n_killed + stateData[i].n_injured);
+		y["incidents"] = y["incidents"] + parseInt(stateData[i].n_killed) + parseInt(stateData[i].n_injured);
 		total = total + y["incidents"];
 		killed = killed + y["killed"];
 	}
@@ -54,110 +54,104 @@ for(i = 0; i < statelist.length; i++)
 	}
 }
 
-//d3.select('svg')
-svg.append('g').append('text').transition().duration(300).attr("x", 0).attr("y", 10).attr("id","anno")
-.text("*Hover over the states for more details").attr("font-size", "14px")
-.attr("font-weight","italic").style("fill", "red").attr("font-weight","bold")
+//The following statement snippet sorts the array by incidents in ascending order:
+			statelist.sort((a, b) => {
+    return b.incidents - a.incidents;
+});
+            var max = d3.max(statelist, function(d) { return parseInt(d.incidents); });
+			
 
+ statelist.sort((a, b) => {
+    return b.incidents - a.incidents;
+});
+
+      d3.select("#Overview").append("svg").attr("height",20).append("g").append('text').transition().duration(300).attr("x", 0).attr("y", 10).attr("id","annotation")
+      .text("*Hover over the Bars for more details").attr("font-size", "14px")
+      .attr("font-weight","italic").style("fill", "red").attr("font-weight","bold")
   
-var rect = svg.append('rect').transition().duration(2000).attr("x", 1000).attr("y", 160).attr("width", 250)
-  .attr("height", 190).attr("fill","lightblue").attr("stroke","black").text("As of July 2022")
+          
+	  var svg = d3.select("#Overview")
+          .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+            .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")"); 
+				  
+ 
+  //X axis
+  var x = d3.scaleBand()
+  .range([ 0, width ])
+  .domain(statelist.map(function(d) { return d.state; }))
+  .padding(0.2);
+svg.append("g")
+  .attr("transform", "translate(0," + height + ")")
+  .attr("id","x")
+  .call(d3.axisBottom(x))
+  .selectAll("text")
+    .attr("transform", "translate(-10,0)rotate(-45)")
+    .style("text-anchor", "end");
 
-  svg.append('g').append('text').transition().duration(2000).attr("x", 1010).attr("y", 175).attr("id","anno")
-  .text("Overview").attr("font-size", "14px").attr("font-weight","italic").style("fill", "Black").attr("font-weight","bold")
-  
+    svg.append("text")
+    .attr("class", "x label")
+    .attr("x", width )
+    .attr("y", height - 6)
+    .text("State Name");
 
-svg.append('g').append('text').transition().duration(2000).attr("x", 1010).attr("y", 190).attr("id","anno")
-.text(">Gun Violence Data for last 3 Years").attr("font-size", "14px").attr("font-weight","italic").style("fill", "Black")
+// Y axis
+console.log(max);
+var y = d3.scaleLinear()
+  .domain([0, max])
+  .range([ height, 0]);
+svg.append("g")
+  .attr("id","y")
+  .call(d3.axisLeft(y));
+svg.append("text")
+  .attr("class", "y label")
+  .attr("text-anchor", "end")
+  .attr("x",18)
+  .attr("y",-60)
+  .attr("dy", ".75em")
+  .attr("transform", "rotate(-90)")
+  .text("Number of Cases");
 
-svg.append('g').append('text').transition().duration(2000).attr("x", 1010).attr("y", 205).attr("id","anno")
-.text(">Total number of Cases: " + total).attr("font-size", "14px").attr("font-weight","italic").style("fill", "Black")
 
-svg.append('g').append('text').transition().duration(2000).attr("x", 1010).attr("y", 220).attr("id","anno")
-.text(">Total number of Deaths: " + killed).attr("font-size", "14px").attr("font-weight","italic").style("fill", "Black")
-
-svg.append('g').append('text').transition().duration(2000).attr("x", 1010).attr("y", 250).attr("id","anno")
-.text("Most Affected State: " + maxstate).attr("font-size", "14px")
-.attr("font-weight","italic").style("fill", "Black").attr("font-weight","bold")
-
-svg.append('g').append('text').transition().duration(2000).attr("x", 1010).attr("y", 267).attr("id","anno")
-.text("Cases in State of " + maxstate + " is: " + maxcase).attr("font-size", "14px")
-.attr("font-weight","italic").style("fill", "Black")
-
-var width = 1300;
-var height = 600;
-var margin = 50;
-
-var projection = d3.geoAlbersUsa()
-				   .translate([(width/2 -100 ), (height/2)-100])
-				   .scale([1000]);
-// Define path generator
-var path = d3.geoPath()               
-.projection(projection);
-
-const colorRange = d3.scaleLinear()
-                    //.interpolator(d3.interpolateInferno)
-                    .domain([1,15000])
-                    .range(["white","pink"]);
-
-var div = d3.select("body").append("div")	
+  var div = d3.select("body").append("div")	
     .attr("class", "tooltip")				
     .style("opacity", 0);
 
+   svg.selectAll("bar")
+  .data(statelist)
+  .enter()
+  .append("rect")
+    .attr("id","bar")
+    .attr("x", function(d) { return x(d.state); })
+    .attr("y", function(d) { return y(parseInt(d.incidents)); })
+    .attr("width", x.bandwidth())
+    .attr("height", function(d) {return height - y(parseInt(d.incidents)); })
+    .attr("fill", "red")
+    .on("mouseover", function(d) {
+      console.log(d.state);
+      if(d3.select(this).style("opacity") != 0){
+        d3.select(this).transition()        
+            .duration(200)      
+            .style("opacity", .85); 
+    }
+    var html  = "<span style = 'font-size:15px;color:black'><b>" + d.state + "</b></span></br>" +
+    "<span style='font-size:12px;color:black'><b> Cases: </b>" + d.incidents + "</span></br>" +
+    "<span style='font-size:12px;color:black'><b> Deaths: </b>" + d.killed + "</span>";
+    div.transition()
+    .duration(200)
+    .style("opacity", 1);
+    div.html(html)
+    .style("left", (d3.event.pageX + 10) + "px")
+    .style("top", (d3.event.pageY +10 ) + "px")
+    .style("width",130)
+    .style("height",80)
+    .style("background",function(){ return("lightblue");})
 
-	for(var i = 0; i < statelist.length; i++){
-        var stateName = (statelist[i].state);
-        var killed = (statelist[i].killed);
-        var injured = (statelist[i].injured);
-        for(var n = 0; n < usMap.features.length; n++){
-            var userState = usMap.features[n].properties.name;
-            if(stateName == userState){
-			usMap.features[n].properties.killed = killed;              
-			  usMap.features[n].properties.injured = injured;
-			  usMap.features[n].properties.incidents = killed + injured;
-              break;
-            }
-	}
-}
-
-	svg.attr("width",width )
-    .attr("height",height)
-	.append("g")
-    .attr("transform","translate(" + margin + "," + margin + ")")
-    .selectAll("path")
-	.data(usMap.features)
-	.enter()
-	.append("path")
-	.attr("d", function(eachfeature) {return path(eachfeature);})
-	.attr("opacity",0.8)
-	.attr("stroke","black")    
-    .attr("fill", function(d) 
-    {   
-
-        return colorRange(d.properties.incidents);
     })
-    .on("mouseover", function(d) 
-    {
-        if(d3.select(this).style("opacity") != 0){
-            d3.select(this).transition()        
-                .duration(200)      
-                .style("opacity", .65); 
-        }
-        var html  = "<span style = 'font-size:15px;color:black'><b>" + d.properties.name + "</b></span></br>" +
-        "<span style='font-size:12px;color:black'><b> Killed: </b>" + d.properties.killed + "</span></br>" +
-        "<span style='font-size:12px;color:black'><b> Injured: </b>" + d.properties.injured + "</span>";
-        div.transition()
-        .duration(200)
-        .style("opacity", 1);
-        div.html(html)
-        .style("left", (d3.event.pageX + 10) + "px")
-        .style("top", (d3.event.pageY +10 ) + "px")
-        .style("width",130)
-        .style("height",80)
-        .style("background",function(){ return("lightblue");})
     
-    })
-
     .on("mouseout", function(d) {
         div.transition()
         .duration(300)
@@ -166,4 +160,12 @@ var div = d3.select("body").append("div")
                 .duration(200)      
                 .style("opacity", 1); 
     })
+
+
+    var rect = svg.append('rect').attr("x", 200).transition().duration(1000).attr("y", -50).attr("width", 400)
+    .attr("height", 30).attr("fill","lightblue").attr("stroke","black").text("As of July 2022")
+
+svg.append("g").append("text").attr("id","annotation").transition().duration(1000).attr("x", 210).attr("y", -30)
+	.text("Cases by States in USA in descending order of incidents").attr("font-size", "14px").attr("fill", "black").attr("font-weight","bold")
+
 }};
