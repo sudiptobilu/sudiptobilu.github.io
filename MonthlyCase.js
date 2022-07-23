@@ -131,7 +131,7 @@ function update(selectedState) {
               .style("top", (d3.event.pageY +10 ) + "px")
               .style("width",130)
               .style("height",80)
-              .style("background",function(){ return("red");})
+              .style("background",function(){ return("lightblue");})
           
               })
               .on("mouseout", function(d) {
