@@ -1,7 +1,7 @@
 var MonthlyCase={
     display: async function () {
 d3.select("#MonthlyCase").selectAll("#stateDiv").remove();
-	    d3.select("#MonthlyCase").selectAll("text").remove();
+d3.select("#MonthlyCase").selectAll("text").remove();
       d3.select("#MonthlyCase").selectAll("svg").remove();
 
   var margin = {top: 10, right: 30, bottom: 50, left: 60},
